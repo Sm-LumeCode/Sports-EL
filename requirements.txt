@@ -26,9 +26,6 @@ scipy
 shap
 matplotlib
 
-# Dashboard
-streamlit
-
 # MLOps
 mlflow
 
