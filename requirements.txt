@@ -1,0 +1,42 @@
+# Web Framework & Server
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# Database & ORM
+SQLAlchemy
+alembic
+psycopg[binary]
+asyncpg
+
+# Data Science & ML
+pandas
+numpy
+scikit-learn
+xgboost
+lightgbm
+catboost
+
+# Optimization
+optuna
+scipy
+
+# Explainability
+shap
+matplotlib
+
+# Dashboard
+streamlit
+
+# MLOps
+mlflow
+
+# Testing
+pytest
+httpx
+pytest-asyncio
+
+# Utilities
+python-dotenv
+pyyaml
