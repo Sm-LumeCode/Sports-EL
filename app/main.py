@@ -1,7 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 from app.api import players, performances
 from app.core.config import settings
+from app.db.database import engine
+from app.db.base import Base
+
+# Create all database tables on startup
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -20,6 +28,10 @@ app.add_middleware(
 app.include_router(players.router, prefix="/players", tags=["players"])
 app.include_router(performances.router, prefix="/performances", tags=["performances"])
 
+# Serve frontend static files
+FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+
 @app.get("/")
-def read_root():
-    return {"message": "Welcome to the Sports Analytics System API"}
+def serve_frontend():
+    return FileResponse(str(FRONTEND_DIR / "index.html"))

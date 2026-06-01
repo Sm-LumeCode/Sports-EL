@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sports Team Selection & Performance Analytics Dashboard — manage players, track performance metrics, and optimize team composition with real-time data.">
+    <title>Sports Analytics — Team Selection & Performance Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">🏆</div>
+            <div class="header-title">
+                <h1>Sports Analytics</h1>
+                <p>Team Selection & Performance Dashboard</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                API Connected
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== STAT CARDS ===== -->
+    <section class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">👥</div>
+                <span class="stat-card-label">Total Players</span>
+            </div>
+            <div class="stat-card-value" id="statTotalPlayers">0</div>
+            <div class="stat-card-change neutral">Registered athletes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">⚽</div>
+                <span class="stat-card-label">Sports</span>
+            </div>
+            <div class="stat-card-value" id="statSports">0</div>
+            <div class="stat-card-change neutral">Active disciplines</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">🏅</div>
+                <span class="stat-card-label">Teams</span>
+            </div>
+            <div class="stat-card-value" id="statTeams">0</div>
+            <div class="stat-card-change neutral">Unique teams</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">📊</div>
+                <span class="stat-card-label">Records</span>
+            </div>
+            <div class="stat-card-value" id="statRecords">0</div>
+            <div class="stat-card-change neutral">Performance entries</div>
+        </div>
+    </section>
+
+    <!-- ===== TABS ===== -->
+    <nav class="tabs-nav" id="tabsNav">
+        <button class="tab-btn active" data-tab="players">👥 Player Roster</button>
+        <button class="tab-btn" data-tab="addPlayer">➕ Add Player</button>
+        <button class="tab-btn" data-tab="performance">📊 Log Performance</button>
+    </nav>
+
+    <!-- ===== TAB: PLAYER ROSTER ===== -->
+    <div class="tab-content active" id="tab-players">
+        <div class="table-card">
+            <div class="table-header">
+                <h2>👥 Player Roster</h2>
+                <div class="search-box">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="searchInput" placeholder="Search players...">
+                </div>
+            </div>
+            <div id="playersTableBody">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: ADD PLAYER ===== -->
+    <div class="tab-content" id="tab-addPlayer">
+        <div class="form-card">
+            <div class="form-card-header">
+                <h2>➕ Register New Player</h2>
+                <p>Add an athlete to the roster with their details</p>
+            </div>
+            <form id="addPlayerForm" autocomplete="off">
+                <div class="form-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="playerName" placeholder="e.g. Lionel Messi" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Age <span class="required">*</span></label>
+                            <input type="number" class="form-input" id="playerAge" placeholder="25" min="15" max="50" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Sport <span class="required">*</span></label>
+                            <select class="form-select" id="playerSport" required>
+                                <option value="">Select a sport</option>
+                                <option value="Football/Soccer">⚽ Football / Soccer</option>
+                                <option value="Basketball">🏀 Basketball</option>
+                                <option value="Cricket">🏏 Cricket</option>
+                                <option value="Tennis">🎾 Tennis</option>
+                                <option value="Rugby">🏈 Rugby</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Position <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="playerPosition" placeholder="e.g. Forward, Point Guard" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Current Team <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="playerTeam" placeholder="e.g. FC Barcelona" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-footer">
+                    <button type="button" class="btn btn-secondary" id="resetPlayerForm">Clear</button>
+                    <button type="submit" class="btn btn-primary" id="submitPlayerBtn">
+                        ➕ Register Player
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== TAB: LOG PERFORMANCE ===== -->
+    <div class="tab-content" id="tab-performance">
+        <div class="form-card">
+            <div class="form-card-header">
+                <h2>📊 Log Performance Record</h2>
+                <p>Record match stats for a player</p>
+            </div>
+            <form id="perfForm" autocomplete="off">
+                <div class="form-body">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Select Player <span class="required">*</span></label>
+                            <select class="form-select" id="perfPlayerId" required>
+                                <option value="">Choose a player...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="perf-stats-grid">
+                        <div class="form-group perf-stat-input">
+                            <label>Matches Played</label>
+                            <input type="number" class="form-input" id="perfMatches" placeholder="0" min="0" value="0">
+                            <span class="stat-icon">🎮</span>
+                        </div>
+                        <div class="form-group perf-stat-input">
+                            <label>Minutes Played</label>
+                            <input type="number" class="form-input" id="perfMinutes" placeholder="0" min="0" value="0">
+                            <span class="stat-icon">⏱️</span>
+                        </div>
+                        <div class="form-group perf-stat-input">
+                            <label>Goals</label>
+                            <input type="number" class="form-input" id="perfGoals" placeholder="0" min="0" value="0">
+                            <span class="stat-icon">⚽</span>
+                        </div>
+                        <div class="form-group perf-stat-input">
+                            <label>Assists</label>
+                            <input type="number" class="form-input" id="perfAssists" placeholder="0" min="0" value="0">
+                            <span class="stat-icon">🤝</span>
+                        </div>
+                        <div class="form-group perf-stat-input">
+                            <label>Accuracy (%)</label>
+                            <input type="number" class="form-input" id="perfAccuracy" placeholder="0.0" min="0" max="100" step="0.1" value="0">
+                            <span class="stat-icon">🎯</span>
+                        </div>
+                        <div class="form-group perf-stat-input">
+                            <label>Efficiency (%)</label>
+                            <input type="number" class="form-input" id="perfEfficiency" placeholder="0.0" min="0" max="100" step="0.1" value="0">
+                            <span class="stat-icon">📈</span>
+                        </div>
+                        <div class="form-group perf-stat-input full-width" style="grid-column: 1 / -1;">
+                            <label>Win Contribution (%)</label>
+                            <input type="number" class="form-input" id="perfWinContrib" placeholder="0.0" min="0" max="100" step="0.1" value="0">
+                            <span class="stat-icon">🏆</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-footer">
+                    <button type="button" class="btn btn-secondary" id="resetPerfForm">Clear</button>
+                    <button type="submit" class="btn btn-primary" id="submitPerfBtn">
+                        📊 Save Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== DELETE CONFIRMATION MODAL ===== -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <div class="modal-icon">⚠️</div>
+        <h3>Delete Player</h3>
+        <p>Are you sure you want to remove <strong id="deletePlayerName"></strong> from the roster? This action cannot be undone.</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" id="cancelDelete">Cancel</button>
+            <button class="btn btn-danger" id="confirmDelete">🗑️ Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

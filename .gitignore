@@ -1,27 +1,65 @@
-# Environments
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.manifest
+*.spec
+
+# ===== Virtual Environments =====
 .env
-.venv
+.venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.pytest_cache/
-pytest.ini
-
-# Database
+# ===== Database =====
 *.db
 *.sqlite3
+*.db-journal
 
-# Git
-.git/
+# ===== Testing =====
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
 
-# IDEs
+# ===== IDEs & Editors =====
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ===== OS Files =====
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ===== MLflow =====
+mlruns/
+mlflow.db
+
+# ===== Logs =====
+*.log
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== Misc =====
+.gemini/
+*.bak
+*.tmp
