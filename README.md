@@ -2,11 +2,11 @@
 
 A sports team selection and performance analytics project with a FastAPI backend and a React frontend.
 
-The project currently supports player roster management and performance record logging. The backend exposes REST APIs, stores data with SQLAlchemy, and defaults to SQLite for local development. A PostgreSQL service is also available through Docker Compose.
+The project currently supports player roster management and performance record logging. The backend exposes REST APIs, stores data with SQLAlchemy, and defaults to SQLite for local development. A PostgreSQL service is available through Docker Compose.
 
 ## What Has Been Done So Far
 
-- Built a FastAPI backend with routes for players and performance records.
+- Built a FastAPI backend with player and performance routes.
 - Added SQLAlchemy models, Pydantic schemas, database setup, and Alembic migration scaffolding.
 - Added player CRUD endpoints:
   - `POST /players/`
@@ -17,15 +17,9 @@ The project currently supports player roster management and performance record l
 - Added performance endpoints:
   - `POST /performances/`
   - `GET /performances/`
-- Added a proper React frontend using Vite.
-- Removed the Streamlit frontend path and removed `streamlit` from Python dependencies.
-- Added a React dashboard with:
-  - roster summary cards
-  - searchable player table
-  - add-player form
-  - performance logging form
-  - delete confirmation modal
-  - API connection status and toast messages
+- Replaced the Streamlit frontend with a proper React + Vite frontend.
+- Added a React dashboard with roster summary cards, searchable player table, player registration, performance logging, delete confirmation, API status, and toast messages.
+- Added a mock data seed script for local SQLite or PostgreSQL.
 - Added pytest coverage for basic player creation and retrieval.
 - Cleaned generated files such as logs, cache folders, local database output, `node_modules`, and React build output.
 
@@ -33,23 +27,26 @@ The project currently supports player roster management and performance record l
 
 ```text
 .
-├── app/
-│   ├── api/              # FastAPI routers
-│   ├── core/             # App settings
-│   ├── db/               # SQLAlchemy engine/session setup
-│   ├── models/           # SQLAlchemy models
-│   ├── schemas/          # Pydantic request/response models
-│   └── main.py           # FastAPI app entrypoint
-├── alembic/              # Database migration files
-├── frontend/             # React + Vite frontend
-│   ├── src/
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.js
-├── tests/                # Pytest tests
-├── docker-compose.yml    # Local PostgreSQL service
-├── requirements.txt      # Python dependencies
-└── pytest.ini
+|-- app/
+|   |-- api/              # FastAPI routers
+|   |-- core/             # App settings
+|   |-- db/               # SQLAlchemy engine/session setup
+|   |-- models/           # SQLAlchemy models
+|   |-- schemas/          # Pydantic request/response models
+|   `-- main.py           # FastAPI app entrypoint
+|-- alembic/              # Database migration files
+|-- frontend/             # React + Vite frontend
+|   |-- src/
+|   |-- index.html
+|   |-- package.json
+|   `-- vite.config.js
+|-- scripts/
+|   `-- seed_mock_data.py # Adds mock players and performance records
+|-- tests/                # Pytest tests
+|-- .env.example          # PostgreSQL environment example
+|-- docker-compose.yml    # Local PostgreSQL service
+|-- requirements.txt      # Python dependencies
+`-- pytest.ini
 ```
 
 ## Backend Setup
@@ -80,35 +77,6 @@ API docs:
 http://127.0.0.1:8000/docs
 ```
 
-By default, the app uses:
-
-```text
-sqlite:///./sports_analytics.db
-```
-
-To use another database, create a `.env` file and set:
-
-```text
-DATABASE_URL=postgresql+psycopg://sports_user:sports_password@localhost:5432/sports_analytics
-```
-
-## Optional PostgreSQL
-
-Start PostgreSQL with Docker Compose:
-
-```powershell
-docker compose up -d
-```
-
-The provided service uses:
-
-```text
-POSTGRES_USER=sports_user
-POSTGRES_PASSWORD=sports_password
-POSTGRES_DB=sports_analytics
-PORT=5432
-```
-
 ## Frontend Setup
 
 Install frontend dependencies:
@@ -118,9 +86,27 @@ cd frontend
 npm install
 ```
 
-Run the React development server:
+The easiest way to run the full app on Windows is from the project root:
 
 ```powershell
+cd D:\SPORTS_EL
+.\scripts\start_dev.ps1
+```
+
+This starts FastAPI on port `8000`, waits for `/health`, then starts the React development server on port `5173`.
+
+If you prefer separate terminals, run the backend first:
+
+```powershell
+cd D:\SPORTS_EL
+.\venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Then run the React development server:
+
+```powershell
+cd D:\SPORTS_EL\frontend
 npm run dev
 ```
 
@@ -130,7 +116,88 @@ Frontend URL:
 http://127.0.0.1:5173
 ```
 
-The Vite dev server proxies `/players` and `/performances` to `http://localhost:8000`, so keep the FastAPI server running while using the React app.
+Keep the FastAPI server running while using the React app. The Vite dev server proxies `/players` and `/performances` to `http://127.0.0.1:8000`.
+
+If you see Vite proxy errors like `ECONNREFUSED`, the frontend is running but the backend is not reachable. Start the backend in another terminal:
+
+```powershell
+cd D:\SPORTS_EL
+.\venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload
+```
+
+You can confirm the backend is up with:
+
+```powershell
+Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8000/health
+```
+
+## Database Requirements
+
+The app needs one of these database options:
+
+- SQLite for quick local development. This is the default and creates `sports_analytics.db`.
+- PostgreSQL for shared/team setup. Use the Docker Compose service in this repo.
+
+Required PostgreSQL values:
+
+```text
+POSTGRES_USER=sports_user
+POSTGRES_PASSWORD=sports_password
+POSTGRES_DB=sports_analytics
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
+```
+
+FastAPI reads the database connection from `DATABASE_URL`. Copy the example file:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The PostgreSQL `DATABASE_URL` should be:
+
+```text
+DATABASE_URL=postgresql+psycopg://sports_user:sports_password@127.0.0.1:5432/sports_analytics
+```
+
+Start PostgreSQL:
+
+```powershell
+docker compose up -d
+```
+
+Then start the backend. Tables are created automatically on startup by `Base.metadata.create_all(bind=engine)`.
+
+## Mock Player Data
+
+After PostgreSQL is running and `.env` contains the PostgreSQL `DATABASE_URL`, seed mock players and performance records:
+
+```powershell
+cd D:\SPORTS_EL
+.\venv\Scripts\Activate.ps1
+python -m scripts.seed_mock_data
+```
+
+This adds sample data for:
+
+- Lionel Messi
+- Aitana Bonmati
+- Virat Kohli
+- LeBron James
+- Harmanpreet Singh
+- Zach Hyman
+
+The seed script is idempotent for player name and team. Running it again will not duplicate those players or their first performance records.
+
+Your teammate needs:
+
+- Python dependencies installed from `requirements.txt`
+- PostgreSQL running on port `5432`
+- `.env` configured with `DATABASE_URL`
+- backend running on `http://127.0.0.1:8000`
+- frontend running on `http://127.0.0.1:5173`
+- mock data loaded with `python -m scripts.seed_mock_data`
 
 ## Production Frontend Build
 

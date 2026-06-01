@@ -28,6 +28,10 @@ app.add_middleware(
 app.include_router(players.router, prefix="/players", tags=["players"])
 app.include_router(performances.router, prefix="/performances", tags=["performances"])
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
 FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"

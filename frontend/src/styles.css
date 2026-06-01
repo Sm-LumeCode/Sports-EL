@@ -120,7 +120,7 @@ h1 {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 16px;
   margin: 26px 0;
 }
@@ -172,6 +172,11 @@ h1 {
 .stat-card.rose .stat-icon {
   color: #fecdd3;
   background: rgba(244, 63, 94, 0.16);
+}
+
+.stat-card.violet .stat-icon {
+  color: #ddd6fe;
+  background: rgba(139, 92, 246, 0.16);
 }
 
 .stat-label {
@@ -365,14 +370,235 @@ td {
   background: rgba(34, 197, 94, 0.14);
 }
 
-.sport-badge.tennis {
+.sport-badge.hockey {
   color: #f0abfc;
   background: rgba(192, 38, 211, 0.14);
 }
 
-.sport-badge.rugby {
-  color: #fda4af;
-  background: rgba(225, 29, 72, 0.14);
+.score-badge,
+.decision {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.score-badge.muted {
+  color: var(--muted);
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.score-badge.elite,
+.decision.elite {
+  color: #bbf7d0;
+  background: rgba(16, 185, 129, 0.18);
+}
+
+.score-badge.strong,
+.decision.strong {
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.score-badge.rotation,
+.decision.rotation {
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.18);
+}
+
+.score-badge.bench,
+.decision.bench {
+  color: #fed7aa;
+  background: rgba(234, 88, 12, 0.18);
+}
+
+.score-badge.out,
+.decision.out {
+  color: #fecdd3;
+  background: rgba(244, 63, 94, 0.18);
+}
+
+.analytics-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(380px, 0.92fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ranking-list {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 42px minmax(160px, 1fr) minmax(140px, 0.8fr) auto 54px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.rank-number {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  background: rgba(59, 130, 246, 0.16);
+  color: #bfdbfe;
+  font-weight: 800;
+}
+
+.rank-player {
+  display: grid;
+  gap: 3px;
+}
+
+.rank-player span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.score-meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.score-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--blue), var(--green));
+}
+
+.score-meter.large {
+  height: 12px;
+}
+
+.score-value {
+  text-align: right;
+  font-size: 1.2rem;
+}
+
+.category-strip {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-strip span {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: #cbd5e1;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.calculator-panel {
+  position: sticky;
+  top: 16px;
+}
+
+.calculator-summary {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.calculator-summary > div:first-child {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.calculator-summary span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.calculator-summary strong {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.formula-grid {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.formula-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.formula-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.formula-group h3 {
+  font-size: 0.9rem;
+}
+
+.formula-group-header strong {
+  color: #bfdbfe;
+}
+
+.formula-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+
+.number-field {
+  display: grid;
+  gap: 6px;
+}
+
+.number-field span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.number-field input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  outline: 0;
+  background: #0b1221;
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.number-field input:focus {
+  border-color: rgba(59, 130, 246, 0.72);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
 }
 
 .empty-state {
@@ -579,12 +805,29 @@ td {
 }
 
 @media (max-width: 940px) {
-  .stats-grid {
+  .form-grid.compact {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .form-grid.compact {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .analytics-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .calculator-panel {
+    position: static;
+  }
+
+  .ranking-row {
+    grid-template-columns: 42px minmax(0, 1fr) 54px;
+  }
+
+  .ranking-row .score-meter,
+  .ranking-row .decision {
+    grid-column: 2 / -1;
+  }
+
+  .category-strip {
+    grid-column: 1 / -1;
   }
 }
 
@@ -602,7 +845,8 @@ td {
 
   .stats-grid,
   .form-grid,
-  .form-grid.compact {
+  .form-grid.compact,
+  .formula-fields {
     grid-template-columns: 1fr;
   }
 

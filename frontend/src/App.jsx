@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   BarChart3,
+  Calculator,
   CheckCircle2,
   CircleAlert,
   ClipboardList,
@@ -10,6 +11,7 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  Trophy,
   Trash2,
   Users
 } from "lucide-react";
@@ -36,11 +38,10 @@ const emptyPerformanceForm = {
 };
 
 const sports = [
-  "Football/Soccer",
+  "Football",
   "Basketball",
   "Cricket",
-  "Tennis",
-  "Rugby"
+  "Hockey"
 ];
 
 const avatarColors = [
@@ -54,6 +55,25 @@ const avatarColors = [
   "#4d7c0f"
 ];
 
+const emptySelectionForm = {
+  fitness: 80,
+  stamina: 80,
+  speed: 80,
+  attendance: 90,
+  last10: 80,
+  last5: 80,
+  last3: 80,
+  recovery: 80,
+  fatigueIndex: 80,
+  workload: 80,
+  currentStatus: 100,
+  injuryHistory: 80,
+  daysSinceLastInjury: 80,
+  roleMatch: 80,
+  teamNeed: 80,
+  versatility: 70
+};
+
 function App() {
   const [activeTab, setActiveTab] = useState("players");
   const [players, setPlayers] = useState([]);
@@ -66,6 +86,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [apiOnline, setApiOnline] = useState(false);
+  const [selectionForm, setSelectionForm] = useState(emptySelectionForm);
 
   const loadData = async () => {
     setLoading(true);
@@ -107,6 +128,9 @@ function App() {
   }, [players, searchTerm]);
 
   const stats = useMemo(() => {
+    const selectionProfiles = buildSelectionProfiles(players, performances);
+    const topScore = selectionProfiles[0]?.score ?? 0;
+
     return [
       {
         label: "Total Players",
@@ -135,9 +159,21 @@ function App() {
         helper: "Performance entries",
         icon: BarChart3,
         tone: "rose"
+      },
+      {
+        label: "Top Score",
+        value: topScore ? Math.round(topScore) : 0,
+        helper: topScore ? decisionBand(topScore).label : "Awaiting data",
+        icon: Trophy,
+        tone: "violet"
       }
     ];
   }, [players, performances]);
+
+  const selectionProfiles = useMemo(
+    () => buildSelectionProfiles(players, performances),
+    [players, performances]
+  );
 
   const showToast = (message, type = "info") => {
     setToast({ message, type });
@@ -267,6 +303,12 @@ function App() {
             label="Log Performance"
             onClick={() => setActiveTab("performance")}
           />
+          <TabButton
+            active={activeTab === "selection"}
+            icon={Calculator}
+            label="Selection Analytics"
+            onClick={() => setActiveTab("selection")}
+          />
         </nav>
 
         {activeTab === "players" && (
@@ -277,6 +319,7 @@ function App() {
             onRefresh={loadData}
             onSearch={setSearchTerm}
             onDelete={setDeleteTarget}
+            profiles={selectionProfiles}
           />
         )}
 
@@ -298,6 +341,16 @@ function App() {
             onChange={setPerformanceForm}
             onReset={() => setPerformanceForm(emptyPerformanceForm)}
             onSubmit={submitPerformance}
+          />
+        )}
+
+        {activeTab === "selection" && (
+          <SelectionAnalytics
+            players={players}
+            profiles={selectionProfiles}
+            form={selectionForm}
+            onChange={setSelectionForm}
+            onReset={() => setSelectionForm(emptySelectionForm)}
           />
         )}
       </section>
@@ -341,7 +394,9 @@ function TabButton({ active, icon: Icon, label, onClick }) {
   );
 }
 
-function RosterView({ loading, players, searchTerm, onRefresh, onSearch, onDelete }) {
+function RosterView({ loading, players, profiles, searchTerm, onRefresh, onSearch, onDelete }) {
+  const profileByPlayerId = new Map(profiles.map((profile) => [profile.player.id, profile]));
+
   return (
     <div className="panel">
       <div className="panel-header">
@@ -386,6 +441,7 @@ function RosterView({ loading, players, searchTerm, onRefresh, onSearch, onDelet
                 <th>Sport</th>
                 <th>Position</th>
                 <th>Team</th>
+                <th>Selection</th>
                 <th aria-label="Actions" />
               </tr>
             </thead>
@@ -412,6 +468,9 @@ function RosterView({ loading, players, searchTerm, onRefresh, onSearch, onDelet
                   <td>{player.position}</td>
                   <td>{player.team}</td>
                   <td>
+                    <ScoreBadge profile={profileByPlayerId.get(player.id)} />
+                  </td>
+                  <td>
                     <button
                       className="icon-button danger"
                       type="button"
@@ -427,6 +486,127 @@ function RosterView({ loading, players, searchTerm, onRefresh, onSearch, onDelet
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function SelectionAnalytics({ players, profiles, form, onChange, onReset }) {
+  const manualScore = calculateSelectionScore({
+    fitness: calculateFitnessCategory(form),
+    performance: calculatePerformanceCategory(form),
+    fatigue: calculateFatigueCategory(form),
+    injury: calculateInjuryCategory(form),
+    team: calculateTeamCategory(form)
+  });
+  const manualBand = decisionBand(manualScore);
+
+  const update = (field) => (event) => {
+    onChange({ ...form, [field]: clampScore(Number(event.target.value)) });
+  };
+
+  return (
+    <div className="analytics-layout">
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>Selection Rankings</h2>
+            <p>Ranks players with the weighted model from the formula document.</p>
+          </div>
+        </div>
+
+        {profiles.length === 0 ? (
+          <div className="empty-state">
+            <Calculator size={34} />
+            <h3>No selection data yet</h3>
+            <p>Add players and performance records to generate rankings.</p>
+          </div>
+        ) : (
+          <div className="ranking-list">
+            {profiles.map((profile, index) => (
+              <article className="ranking-row" key={profile.player.id}>
+                <div className="rank-number">{index + 1}</div>
+                <div className="rank-player">
+                  <strong>{profile.player.name}</strong>
+                  <span>
+                    {profile.player.position} - {profile.player.team}
+                  </span>
+                </div>
+                <div className="score-meter" aria-label={`Score ${Math.round(profile.score)}`}>
+                  <span style={{ width: `${profile.score}%` }} />
+                </div>
+                <div className={`decision ${profile.band.tone}`}>{profile.band.label}</div>
+                <strong className="score-value">{Math.round(profile.score)}</strong>
+                <div className="category-strip">
+                  {profile.categories.map((category) => (
+                    <span key={category.label}>
+                      {category.label}: {Math.round(category.value)}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="panel calculator-panel">
+        <div className="panel-header">
+          <div>
+            <h2>Formula Calculator</h2>
+            <p>Enter normalized 0-100 category inputs to test selection outcomes.</p>
+          </div>
+          <div className={`decision ${manualBand.tone}`}>{manualBand.label}</div>
+        </div>
+
+        <div className="calculator-summary">
+          <div>
+            <span>Overall Player Score</span>
+            <strong>{Math.round(manualScore)}</strong>
+          </div>
+          <div className="score-meter large">
+            <span style={{ width: `${manualScore}%` }} />
+          </div>
+        </div>
+
+        <div className="formula-grid">
+          <FormulaGroup title="Fitness 30%" score={calculateFitnessCategory(form)}>
+            <NumberField label="Overall Fitness" value={form.fitness} onChange={update("fitness")} />
+            <NumberField label="Stamina" value={form.stamina} onChange={update("stamina")} />
+            <NumberField label="Speed" value={form.speed} onChange={update("speed")} />
+            <NumberField label="Attendance" value={form.attendance} onChange={update("attendance")} />
+          </FormulaGroup>
+
+          <FormulaGroup title="Performance 25%" score={calculatePerformanceCategory(form)}>
+            <NumberField label="Last 10" value={form.last10} onChange={update("last10")} />
+            <NumberField label="Last 5" value={form.last5} onChange={update("last5")} />
+            <NumberField label="Last 3" value={form.last3} onChange={update("last3")} />
+          </FormulaGroup>
+
+          <FormulaGroup title="Fatigue 20%" score={calculateFatigueCategory(form)}>
+            <NumberField label="Recovery" value={form.recovery} onChange={update("recovery")} />
+            <NumberField label="Fatigue Index" value={form.fatigueIndex} onChange={update("fatigueIndex")} />
+            <NumberField label="Workload" value={form.workload} onChange={update("workload")} />
+          </FormulaGroup>
+
+          <FormulaGroup title="Injury 15%" score={calculateInjuryCategory(form)}>
+            <NumberField label="Current Status" value={form.currentStatus} onChange={update("currentStatus")} />
+            <NumberField label="Injury History" value={form.injuryHistory} onChange={update("injuryHistory")} />
+            <NumberField label="Days Since Injury" value={form.daysSinceLastInjury} onChange={update("daysSinceLastInjury")} />
+          </FormulaGroup>
+
+          <FormulaGroup title="Team Requirement 10%" score={calculateTeamCategory(form)}>
+            <NumberField label="Role Match" value={form.roleMatch} onChange={update("roleMatch")} />
+            <NumberField label="Team Need" value={form.teamNeed} onChange={update("teamNeed")} />
+            <NumberField label="Versatility" value={form.versatility} onChange={update("versatility")} />
+          </FormulaGroup>
+        </div>
+
+        <div className="form-actions">
+          <button className="button secondary" type="button" onClick={onReset}>
+            Reset Calculator
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
@@ -567,6 +747,39 @@ function Field({ label, children, required = false, className = "" }) {
   );
 }
 
+function NumberField({ label, value, onChange }) {
+  return (
+    <label className="number-field">
+      <span>{label}</span>
+      <input min="0" max="100" type="number" value={value} onChange={onChange} />
+    </label>
+  );
+}
+
+function FormulaGroup({ title, score, children }) {
+  return (
+    <article className="formula-group">
+      <div className="formula-group-header">
+        <h3>{title}</h3>
+        <strong>{Math.round(score)}</strong>
+      </div>
+      <div className="formula-fields">{children}</div>
+    </article>
+  );
+}
+
+function ScoreBadge({ profile }) {
+  if (!profile) {
+    return <span className="score-badge muted">No record</span>;
+  }
+
+  return (
+    <span className={`score-badge ${profile.band.tone}`}>
+      {Math.round(profile.score)} - {profile.band.label}
+    </span>
+  );
+}
+
 function ConfirmDialog({ player, saving, onCancel, onConfirm }) {
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onCancel}>
@@ -624,9 +837,150 @@ function sportClass(sport) {
   const normalized = sport.toLowerCase();
   if (normalized.includes("basketball")) return "basketball";
   if (normalized.includes("cricket")) return "cricket";
-  if (normalized.includes("tennis")) return "tennis";
-  if (normalized.includes("rugby")) return "rugby";
+  if (normalized.includes("hockey")) return "hockey";
   return "football";
+}
+
+function buildSelectionProfiles(players, performances) {
+  return players
+    .map((player) => {
+      const playerPerformances = performances.filter(
+        (performance) => performance.player_id === player.id
+      );
+      const latestPerformance = playerPerformances[playerPerformances.length - 1];
+      if (!latestPerformance) return null;
+
+      const performanceScore = average([
+        normalizeCount(latestPerformance.goals, 20),
+        normalizeCount(latestPerformance.assists, 20),
+        latestPerformance.accuracy,
+        latestPerformance.efficiency,
+        latestPerformance.win_contribution
+      ]);
+      const workloadScore = workloadFromMinutes(latestPerformance.minutes_played);
+      const fitness = calculateFitnessCategory({
+        fitness: latestPerformance.efficiency,
+        stamina: workloadScore,
+        speed: latestPerformance.accuracy,
+        attendance: latestPerformance.matches_played > 0 ? 90 : 60
+      });
+      const fatigue = calculateFatigueCategory({
+        recovery: workloadScore,
+        fatigueIndex: workloadScore,
+        workload: workloadScore
+      });
+      const injury = 85;
+      const team = calculateTeamCategory({
+        roleMatch: 80,
+        teamNeed: latestPerformance.win_contribution || 70,
+        versatility: player.position?.toLowerCase().includes("forward") ? 70 : 75
+      });
+      const score = calculateSelectionScore({
+        fitness,
+        performance: performanceScore,
+        fatigue,
+        injury,
+        team
+      });
+
+      return {
+        player,
+        score,
+        band: decisionBand(score),
+        categories: [
+          { label: "Fitness", value: fitness },
+          { label: "Performance", value: performanceScore },
+          { label: "Fatigue", value: fatigue },
+          { label: "Injury", value: injury },
+          { label: "Team", value: team }
+        ]
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score);
+}
+
+function calculateFitnessCategory(values) {
+  return (
+    0.4 * clampScore(values.fitness) +
+    0.3 * clampScore(values.stamina) +
+    0.2 * clampScore(values.speed) +
+    0.1 * clampScore(values.attendance)
+  );
+}
+
+function calculatePerformanceCategory(values) {
+  return (
+    0.5 * clampScore(values.last10) +
+    0.3 * clampScore(values.last5) +
+    0.2 * clampScore(values.last3)
+  );
+}
+
+function calculateFatigueCategory(values) {
+  return (
+    0.5 * clampScore(values.recovery) +
+    0.3 * clampScore(values.fatigueIndex) +
+    0.2 * clampScore(values.workload)
+  );
+}
+
+function calculateInjuryCategory(values) {
+  return (
+    0.5 * clampScore(values.currentStatus) +
+    0.3 * clampScore(values.injuryHistory) +
+    0.2 * clampScore(values.daysSinceLastInjury)
+  );
+}
+
+function calculateTeamCategory(values) {
+  return (
+    0.5 * clampScore(values.roleMatch) +
+    0.3 * clampScore(values.teamNeed) +
+    0.2 * clampScore(values.versatility)
+  );
+}
+
+function calculateSelectionScore(categories) {
+  return (
+    0.3 * clampScore(categories.fitness) +
+    0.25 * clampScore(categories.performance) +
+    0.2 * clampScore(categories.fatigue) +
+    0.15 * clampScore(categories.injury) +
+    0.1 * clampScore(categories.team)
+  );
+}
+
+function decisionBand(score) {
+  if (score >= 90) return { label: "Guaranteed Starter", tone: "elite" };
+  if (score >= 80) return { label: "Strong Starter", tone: "strong" };
+  if (score >= 70) return { label: "Rotation Player", tone: "rotation" };
+  if (score >= 60) return { label: "Bench Player", tone: "bench" };
+  return { label: "Not Selected", tone: "out" };
+}
+
+function workloadFromMinutes(minutes) {
+  if (minutes <= 0) return 60;
+  if (minutes <= 1200) return 100;
+  if (minutes <= 2200) return 80;
+  if (minutes <= 3000) return 60;
+  if (minutes <= 3800) return 40;
+  return 20;
+}
+
+function normalizeCount(value, maxValue) {
+  return clampScore((Number(value) / maxValue) * 100);
+}
+
+function average(values) {
+  const safeValues = values.map(clampScore);
+  return safeValues.reduce((total, value) => total + value, 0) / safeValues.length;
+}
+
+function clampScore(value) {
+  const number = Number(value);
+  if (Number.isNaN(number)) return 0;
+  return Math.min(100, Math.max(0, number));
 }
 
 export default App;

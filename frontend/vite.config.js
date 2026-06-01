@@ -6,8 +6,14 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/players": "http://localhost:8000",
-      "/performances": "http://localhost:8000"
+      "/players": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true
+      },
+      "/performances": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true
+      }
     }
   }
 });
