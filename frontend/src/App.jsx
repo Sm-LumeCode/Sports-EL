@@ -6,6 +6,8 @@ import {
   CheckCircle2,
   CircleAlert,
   ClipboardList,
+  Filter,
+  KeyRound,
   Loader2,
   Plus,
   RefreshCw,
@@ -13,7 +15,8 @@ import {
   ShieldCheck,
   Trophy,
   Trash2,
-  Users
+  Users,
+  ArrowLeftRight
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -79,6 +82,7 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [performances, setPerformances] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sportFilter, setSportFilter] = useState("All");
   const [playerForm, setPlayerForm] = useState(emptyPlayerForm);
   const [performanceForm, setPerformanceForm] = useState(emptyPerformanceForm);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -87,6 +91,13 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [apiOnline, setApiOnline] = useState(false);
   const [selectionForm, setSelectionForm] = useState(emptySelectionForm);
+  const [authToken, setAuthToken] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [substitutionResult, setSubstitutionResult] = useState(null);
+  const [substitutionLoading, setSubstitutionLoading] = useState(false);
+  const [selectionSport, setSelectionSport] = useState("Cricket");
 
   const loadData = async () => {
     setLoading(true);
@@ -117,15 +128,16 @@ function App() {
 
   const filteredPlayers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return players;
-
-    return players.filter((player) =>
+    let list = players;
+    if (sportFilter !== "All") list = list.filter((p) => p.sport === sportFilter);
+    if (!query) return list;
+    return list.filter((player) =>
       [player.name, player.sport, player.position, player.team]
         .join(" ")
         .toLowerCase()
         .includes(query)
     );
-  }, [players, searchTerm]);
+  }, [players, searchTerm, sportFilter]);
 
   const stats = useMemo(() => {
     const selectionProfiles = buildSelectionProfiles(players, performances);
@@ -179,6 +191,74 @@ function App() {
     setToast({ message, type });
     window.clearTimeout(showToast.timeout);
     showToast.timeout = window.setTimeout(() => setToast(null), 4200);
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `username=${encodeURIComponent(loginForm.username)}&password=${encodeURIComponent(loginForm.password)}`
+      });
+      if (!res.ok) throw new Error("Invalid credentials");
+      const data = await res.json();
+      setAuthToken(data.access_token);
+      setShowLogin(false);
+      setLoginForm({ username: "", password: "" });
+      showToast("Logged in — you can now use Filter!", "success");
+    } catch {
+      showToast("Login failed. Check username/password.", "error");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleFilterSubstitutes = async (replacePlayerId) => {
+    if (!authToken) { setShowLogin(true); return; }
+    setSubstitutionLoading(true);
+    setSubstitutionResult(null);
+    try {
+      // Build the current team: top players of the selected sport by formula score
+      const sportProfiles = selectionProfiles.filter(
+        (p) => p.player.sport === selectionSport
+      );
+      const teamSize = selectionSport === "Cricket" ? 11
+        : selectionSport === "Football" ? 11
+        : selectionSport === "Basketball" ? 5
+        : 11;
+      const currentTeam = sportProfiles.slice(0, teamSize);
+      const currentTeamIds = currentTeam.map((p) => p.player.id);
+
+      // If replace target not in team, replace the lowest scorer in the team
+      const targetId = currentTeamIds.includes(replacePlayerId)
+        ? replacePlayerId
+        : currentTeamIds[currentTeamIds.length - 1];
+
+      const res = await fetch(`${API_BASE}/selection/substitute`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          sport: selectionSport,
+          current_team_ids: currentTeamIds,
+          player_to_replace_id: targetId,
+          allow_versatile: true
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Substitution failed");
+      }
+      setSubstitutionResult(await res.json());
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setSubstitutionLoading(false);
+    }
   };
 
   const submitPlayer = async (event) => {
@@ -271,9 +351,20 @@ function App() {
           </div>
         </div>
 
-        <div className={`status-pill ${apiOnline ? "online" : "offline"}`}>
-          {apiOnline ? <CheckCircle2 size={16} /> : <CircleAlert size={16} />}
-          {apiOnline ? "API connected" : "API offline"}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div className={`status-pill ${apiOnline ? "online" : "offline"}`}>
+            {apiOnline ? <CheckCircle2 size={16} /> : <CircleAlert size={16} />}
+            {apiOnline ? "API connected" : "API offline"}
+          </div>
+          <button
+            className={`button ${authToken ? "secondary" : "primary"}`}
+            style={{ padding: "6px 14px", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}
+            type="button"
+            onClick={() => authToken ? (setAuthToken("") || showToast("Logged out", "info")) : setShowLogin(true)}
+          >
+            <KeyRound size={14} />
+            {authToken ? "Logout" : "Login"}
+          </button>
         </div>
       </header>
 
@@ -316,6 +407,8 @@ function App() {
             loading={loading}
             players={filteredPlayers}
             searchTerm={searchTerm}
+            sportFilter={sportFilter}
+            onSportFilter={setSportFilter}
             onRefresh={loadData}
             onSearch={setSearchTerm}
             onDelete={setDeleteTarget}
@@ -351,6 +444,13 @@ function App() {
             form={selectionForm}
             onChange={setSelectionForm}
             onReset={() => setSelectionForm(emptySelectionForm)}
+            authToken={authToken}
+            onLoginRequired={() => setShowLogin(true)}
+            onFilter={handleFilterSubstitutes}
+            substitutionResult={substitutionResult}
+            substitutionLoading={substitutionLoading}
+            selectionSport={selectionSport}
+            onSelectionSportChange={(s) => { setSelectionSport(s); setSubstitutionResult(null); }}
           />
         )}
       </section>
@@ -365,6 +465,50 @@ function App() {
       )}
 
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+
+      {showLogin && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowLogin(false)}>
+          <section
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="login-title"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="modal-icon" style={{ background: "linear-gradient(135deg,#2563eb,#7c3aed)" }}>
+              <KeyRound size={24} color="white" />
+            </div>
+            <h2 id="login-title">Login to Enable Filter</h2>
+            <p style={{ color: "var(--text-muted)", marginBottom: "20px", fontSize: "14px" }}>
+              The substitution Filter uses the backend formula API. Default: <strong>admin / admin123</strong>
+            </p>
+            <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <input
+                placeholder="Username"
+                value={loginForm.username}
+                onChange={(e) => setLoginForm((f) => ({ ...f, username: e.target.value }))}
+                required
+                style={{ padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--border)", fontSize: "14px", background: "var(--surface)" }}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
+                required
+                style={{ padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--border)", fontSize: "14px", background: "var(--surface)" }}
+              />
+              <div className="modal-actions">
+                <button className="button secondary" type="button" onClick={() => setShowLogin(false)}>Cancel</button>
+                <button className="button primary" type="submit" disabled={loginLoading}>
+                  {loginLoading ? <Loader2 className="spin" size={16} /> : <KeyRound size={16} />}
+                  Login
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
@@ -394,7 +538,7 @@ function TabButton({ active, icon: Icon, label, onClick }) {
   );
 }
 
-function RosterView({ loading, players, profiles, searchTerm, onRefresh, onSearch, onDelete }) {
+function RosterView({ loading, players, profiles, searchTerm, sportFilter, onSportFilter, onRefresh, onSearch, onDelete }) {
   const profileByPlayerId = new Map(profiles.map((profile) => [profile.player.id, profile]));
 
   return (
@@ -418,6 +562,19 @@ function RosterView({ loading, players, profiles, searchTerm, onRefresh, onSearc
             <RefreshCw size={16} />
           </button>
         </div>
+      </div>
+
+      <div className="sport-filter-bar">
+        {["All", ...sports].map((s) => (
+          <button
+            key={s}
+            type="button"
+            className={`sport-filter-btn ${sportFilter === s ? "active" : ""} ${s !== "All" ? sportClass(s) : ""}`}
+            onClick={() => onSportFilter(s)}
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -490,7 +647,7 @@ function RosterView({ loading, players, profiles, searchTerm, onRefresh, onSearc
   );
 }
 
-function SelectionAnalytics({ players, profiles, form, onChange, onReset }) {
+function SelectionAnalytics({ players, profiles, form, onChange, onReset, authToken, onLoginRequired, onFilter, substitutionResult, substitutionLoading, selectionSport, onSelectionSportChange }) {
   const manualScore = calculateSelectionScore({
     fitness: calculateFitnessCategory(form),
     performance: calculatePerformanceCategory(form),
@@ -504,31 +661,123 @@ function SelectionAnalytics({ players, profiles, form, onChange, onReset }) {
     onChange({ ...form, [field]: clampScore(Number(event.target.value)) });
   };
 
+  const sportProfiles = profiles.filter((p) => p.player.sport === selectionSport);
+  const teamSize = selectionSport === "Basketball" ? 5 : 11;
+  const currentTeam = sportProfiles.slice(0, teamSize);
+  const lowestScorer = currentTeam[currentTeam.length - 1];
+
   return (
     <div className="analytics-layout">
       <section className="panel">
         <div className="panel-header">
           <div>
             <h2>Selection Rankings</h2>
-            <p>Ranks players with the weighted model from the formula document.</p>
+            <p>Ranks players with the weighted formula. Use Filter to simulate substitution.</p>
           </div>
         </div>
 
-        {profiles.length === 0 ? (
+        {/* Sport Selector */}
+        <div className="sport-filter-bar" style={{ padding: "0 20px 16px" }}>
+          {sports.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={`sport-filter-btn ${selectionSport === s ? "active" : ""} ${sportClass(s)}`}
+              onClick={() => onSelectionSportChange(s)}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        {/* Filter Button */}
+        <div style={{ padding: "0 20px 20px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <button
+            className="button primary"
+            type="button"
+            disabled={substitutionLoading || sportProfiles.length === 0}
+            onClick={() => {
+              if (!authToken) { onLoginRequired(); return; }
+              const target = lowestScorer?.player?.id;
+              if (target) onFilter(target);
+            }}
+            style={{ display: "flex", alignItems: "center", gap: "8px" }}
+          >
+            {substitutionLoading ? <Loader2 className="spin" size={16} /> : <Filter size={16} />}
+            Filter Best Substitute
+          </button>
+          {!authToken && (
+            <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+              <KeyRound size={13} style={{ verticalAlign: "middle", marginRight: 4 }} />
+              Login required to use Filter
+            </span>
+          )}
+          {lowestScorer && (
+            <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+              Will replace: <strong>{lowestScorer.player.name}</strong> (score {Math.round(lowestScorer.score)})
+            </span>
+          )}
+        </div>
+
+        {/* Substitution Result Card */}
+        {substitutionResult && (
+          <div className="substitution-card">
+            <div className="sub-header">
+              <ArrowLeftRight size={18} />
+              <span>Substitution Recommendation</span>
+            </div>
+            <div className="sub-players">
+              <div className="sub-player out">
+                <span className="sub-tag">OUT</span>
+                <strong>{substitutionResult.replaced_player_name}</strong>
+                <span>Score: {substitutionResult.replaced_player_score.toFixed(1)}</span>
+                <div className="sub-breakdown">
+                  <span>Fitness: {substitutionResult.replaced_player_breakdown.fitness_category.toFixed(1)}</span>
+                  <span>Fatigue: {substitutionResult.replaced_player_breakdown.fatigue_category.toFixed(1)}</span>
+                  <span>Injury: {substitutionResult.replaced_player_breakdown.injury_category.toFixed(1)}</span>
+                  <span>Form: {substitutionResult.replaced_player_breakdown.performance_category.toFixed(1)}</span>
+                </div>
+              </div>
+              <div className="sub-arrow">→</div>
+              <div className="sub-player in">
+                <span className="sub-tag">IN</span>
+                <strong>{substitutionResult.substitute.name}</strong>
+                <span>{substitutionResult.substitute.position} | Score: {substitutionResult.substitute.score.toFixed(1)}</span>
+                <div className="sub-breakdown">
+                  <span>Fitness: {substitutionResult.substitute.score_breakdown.fitness_category.toFixed(1)}</span>
+                  <span>Fatigue: {substitutionResult.substitute.score_breakdown.fatigue_category.toFixed(1)}</span>
+                  <span>Injury: {substitutionResult.substitute.score_breakdown.injury_category.toFixed(1)}</span>
+                  <span>Form: {substitutionResult.substitute.score_breakdown.performance_category.toFixed(1)}</span>
+                </div>
+              </div>
+            </div>
+            <div className="sub-reason">{substitutionResult.reason}</div>
+            <div className={`sub-improvement ${substitutionResult.substitute.improvement_over_replaced >= 0 ? "positive" : "negative"}`}>
+              Score change: {substitutionResult.substitute.improvement_over_replaced >= 0 ? "+" : ""}{substitutionResult.substitute.improvement_over_replaced.toFixed(2)}
+            </div>
+          </div>
+        )}
+
+        {sportProfiles.length === 0 ? (
           <div className="empty-state">
             <Calculator size={34} />
-            <h3>No selection data yet</h3>
-            <p>Add players and performance records to generate rankings.</p>
+            <h3>No {selectionSport} players with data</h3>
+            <p>Add performance records for {selectionSport} players to generate rankings.</p>
           </div>
         ) : (
           <div className="ranking-list">
-            {profiles.map((profile, index) => (
-              <article className="ranking-row" key={profile.player.id}>
+            {sportProfiles.map((profile, index) => (
+              <article
+                className={`ranking-row ${currentTeam.includes(profile) ? "in-team" : ""}`}
+                key={profile.player.id}
+                title={currentTeam.includes(profile) ? "In selected team" : "Reserve"}
+              >
                 <div className="rank-number">{index + 1}</div>
                 <div className="rank-player">
                   <strong>{profile.player.name}</strong>
                   <span>
-                    {profile.player.position} - {profile.player.team}
+                    {profile.player.position} · {profile.player.team}
+                    {currentTeam.includes(profile) && <span className="team-pill">Team</span>}
                   </span>
                 </div>
                 <div className="score-meter" aria-label={`Score ${Math.round(profile.score)}`}>
@@ -543,6 +792,20 @@ function SelectionAnalytics({ players, profiles, form, onChange, onReset }) {
                     </span>
                   ))}
                 </div>
+                {currentTeam.includes(profile) && (
+                  <button
+                    className="sub-btn"
+                    type="button"
+                    title="Find substitute for this player"
+                    disabled={substitutionLoading}
+                    onClick={() => {
+                      if (!authToken) { onLoginRequired(); return; }
+                      onFilter(profile.player.id);
+                    }}
+                  >
+                    <ArrowLeftRight size={13} />
+                  </button>
+                )}
               </article>
             ))}
           </div>

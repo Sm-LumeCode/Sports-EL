@@ -872,3 +872,212 @@ td {
     width: 100%;
   }
 }
+
+/* ── Text muted variable ── */
+:root {
+  --text-muted: #94a3b8;
+}
+
+/* ── Sport filter bar ── */
+.sport-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.sport-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.sport-filter-btn:hover {
+  border-color: rgba(148, 163, 184, 0.5);
+  background: #172238;
+}
+
+.sport-filter-btn.active {
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.15);
+}
+
+.sport-filter-btn.active.football { background: #1d4ed8; }
+.sport-filter-btn.active.cricket  { background: #15803d; }
+.sport-filter-btn.active.basketball { background: #c2410c; }
+.sport-filter-btn.active.hockey   { background: #7e22ce; }
+.sport-filter-btn.active:not(.football):not(.cricket):not(.basketball):not(.hockey) {
+  background: #374151;
+}
+
+/* ── In-team highlight on ranking rows ── */
+.ranking-row.in-team {
+  border-color: rgba(59, 130, 246, 0.42);
+  background: rgba(29, 78, 216, 0.08);
+}
+
+/* ── Team pill badge ── */
+.team-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  font-size: 0.68rem;
+  font-weight: 800;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ── Substitute trigger button on ranking rows ── */
+.sub-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--radius);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: rgba(29, 78, 216, 0.14);
+  color: #93c5fd;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.sub-btn:hover {
+  background: rgba(29, 78, 216, 0.34);
+}
+
+.sub-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Substitution result card ── */
+.substitution-card {
+  margin: 0 20px 20px;
+  padding: 18px;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius);
+  background: rgba(99, 102, 241, 0.07);
+}
+
+.sub-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  color: #a5b4fc;
+}
+
+.sub-players {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.sub-player {
+  flex: 1;
+  min-width: 180px;
+  padding: 14px;
+  border-radius: var(--radius);
+  display: grid;
+  gap: 6px;
+}
+
+.sub-player.out {
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.sub-player.in {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.sub-tag {
+  display: inline-flex;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.sub-player.out .sub-tag {
+  background: rgba(244, 63, 94, 0.18);
+  color: #fda4af;
+}
+
+.sub-player.in .sub-tag {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+
+.sub-player strong { font-size: 0.95rem; }
+.sub-player > span { color: var(--text-muted); font-size: 0.8rem; }
+
+.sub-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.sub-breakdown span {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+}
+
+.sub-arrow {
+  font-size: 1.5rem;
+  color: #6366f1;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sub-reason {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: rgba(148, 163, 184, 0.06);
+  color: #cbd5e1;
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.sub-improvement {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.sub-improvement.positive { color: #6ee7b7; }
+.sub-improvement.negative { color: #fda4af; }
+
+/* ── Ranking row grid — add column for sub-btn ── */
+.ranking-row {
+  grid-template-columns: 42px minmax(160px, 1fr) minmax(140px, 0.8fr) auto 54px 34px;
+}
+
