@@ -26,6 +26,17 @@ class SelectionRequest(BaseModel):
         return v
 
 
+class ScoreBreakdown(BaseModel):
+    """Detailed breakdown of how a player's overall score was computed."""
+    fitness_category: float
+    fatigue_category: float
+    injury_category: float
+    performance_category: float
+    team_requirement_category: float
+    overall_score: float
+    selection_reason: str
+
+
 class SelectedPlayer(BaseModel):
     """A player selected for the team."""
     player_id: int
@@ -36,6 +47,7 @@ class SelectedPlayer(BaseModel):
     goals: int
     assists: int
     efficiency: float
+    score_breakdown: Optional[ScoreBreakdown] = None
 
 
 class SelectionResponse(BaseModel):
@@ -46,3 +58,33 @@ class SelectionResponse(BaseModel):
     scoring_method: str
     weights_used: Dict[str, float]
     team: List[SelectedPlayer]
+
+
+class SubstitutionRequest(BaseModel):
+    """Request to find the best substitute for a player."""
+    sport: str
+    current_team_ids: List[int]
+    player_to_replace_id: int
+    allow_versatile: bool = True
+
+
+class SubstitutionCandidate(BaseModel):
+    """A candidate substitute player."""
+    player_id: int
+    name: str
+    position: str
+    team: str
+    score: float
+    score_breakdown: ScoreBreakdown
+    improvement_over_replaced: float
+
+
+class SubstitutionResponse(BaseModel):
+    """Response showing the replaced player and recommended substitute."""
+    replaced_player_id: int
+    replaced_player_name: str
+    replaced_player_score: float
+    replaced_player_breakdown: ScoreBreakdown
+    substitute: SubstitutionCandidate
+    reason: str
+
