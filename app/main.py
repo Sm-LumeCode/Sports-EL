@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
-from app.api import players, performances
+from app.api import players, performances, auth, selection, analytics
 from app.core.config import settings
 from app.db.database import engine
 from app.db.base import Base
@@ -25,8 +25,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(players.router, prefix="/players", tags=["players"])
 app.include_router(performances.router, prefix="/performances", tags=["performances"])
+app.include_router(selection.router, prefix="/selection", tags=["selection"])
+app.include_router(analytics.router, tags=["analytics"])
 
 @app.get("/health")
 def health_check():

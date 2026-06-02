@@ -37,3 +37,8 @@ pytest-asyncio
 # Utilities
 python-dotenv
 pyyaml
+
+# Auth
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart

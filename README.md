@@ -29,19 +29,19 @@ The project currently supports player roster management and performance record l
 .
 |-- app/
 |   |-- api/              # FastAPI routers
-|   |-- core/             # App settings
+|   |-- core/             # App settings and security
 |   |-- db/               # SQLAlchemy engine/session setup
+|   |-- ml/               # Machine learning models and predictors
 |   |-- models/           # SQLAlchemy models
 |   |-- schemas/          # Pydantic request/response models
+|   |-- services/         # Business logic layer
+|   |-- deps.py           # Dependency injection (Auth/DB)
 |   `-- main.py           # FastAPI app entrypoint
 |-- alembic/              # Database migration files
 |-- frontend/             # React + Vite frontend
-|   |-- src/
-|   |-- index.html
-|   |-- package.json
-|   `-- vite.config.js
 |-- scripts/
-|   `-- seed_mock_data.py # Adds mock players and performance records
+|   |-- seed_mock_data.py # Adds mock players and performance records
+|   `-- train_model.py    # Trains the ML selection model
 |-- tests/                # Pytest tests
 |-- .env.example          # PostgreSQL environment example
 |-- docker-compose.yml    # Local PostgreSQL service
@@ -233,3 +233,43 @@ Current test coverage checks basic player creation and retrieval with an in-memo
 - `node_modules`, `frontend/dist`, logs, test cache, and local database files are generated artifacts and are ignored.
 - `frontend/package-lock.json` is kept so frontend installs are reproducible.
 - The current frontend is React only; Streamlit is no longer part of the project.
+
+## Environment Variables
+
+In addition to database credentials, you should configure the following security settings in your `.env` file:
+- `SECRET_KEY`: Used for signing JWT tokens. Change this to a random secret string in production.
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time in minutes (default 30).
+
+## API Reference
+
+### Auth
+
+**Register**
+```bash
+curl -X POST http://localhost:8000/auth/register -H "Content-Type: application/json" -d '{"username":"test","email":"test@test.com","password":"test123"}'
+```
+
+**Login**
+```bash
+curl -X POST http://localhost:8000/auth/login -d "username=test&password=test123"
+```
+
+### Selection
+
+**Generate a Team**
+```bash
+curl -X POST http://localhost:8000/selection -H "Content-Type: application/json" -H "Authorization: Bearer <token>" -d '{"sport":"Football","team_size":4,"position_limits":{"GK":1,"DEF":1,"MID":1,"FWD":1}}'
+```
+
+### Analytics
+
+**Get Player Metrics**
+```bash
+curl http://localhost:8000/players/1/metrics
+```
+
+**View Leaderboard**
+```bash
+curl "http://localhost:8000/analytics/leaderboard?metric=goals&sport=Football&top_n=5"
+```
+
